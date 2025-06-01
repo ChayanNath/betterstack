@@ -1,20 +1,19 @@
 {
-  "name": "api",
+  "name": "store",
   "module": "index.ts",
   "type": "module",
   "private": true,
+  "exports": {
+    "./client": "./index.ts"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },
-  "scripts": {
-    "dev": "bun run index.ts"
-  },
   "peerDependencies": {
-    "typescript": "^5",
-    "store": "workspace:*"
+    "typescript": "^5"
   },
   "dependencies": {
-    "@types/express": "^5.0.2",
-    "express": "^5.1.0"
+    "@prisma/client": "^6.8.2",
+    "prisma": "^6.8.2"
   }
 }
