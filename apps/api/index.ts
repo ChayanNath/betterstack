@@ -1,32 +1,35 @@
 
 import express from 'express';
 import { prismaClient } from 'store/client';
+import { AuthInput } from './types';
+import jwt from "jsonwebtoken";
 const app = express();
 
 
 app.use(express.json());
 
-app.post("/api/v1/website", async (req, res) => {
-  try {
-    const { url } = req.body;
-    if (!url) {
-      res.status(400).json({ message: "Url is required" });
-      return;
-    }
-    const website = await prismaClient.website.create({
-      data: {
-        url,
-      },
-    });
-    res
-      .status(201)
-      .json({ id: website.id, message: "Website created successfully" });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Failed to connect to database" });
-    return;
-  }
-});
+// app.post("/api/v1/website", async (req, res) => {
+//   try {
+//     const { url } = req.body;
+//     if (!url) {
+//       res.status(400).json({ message: "Url is required" });
+//       return;
+//     }
+//     const website = await prismaClient.website.create({
+//       data: {
+//         url,
+//         userId: req?.user?.id,
+//       },
+//     });
+//     res
+//       .status(201)
+//       .json({ id: website.id, message: "Website created successfully" });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: "Failed to connect to database" });
+//     return;
+//   }
+// });
 
 app.get("/api/v1/status/:id", async (req, res) => {
   try {
@@ -51,6 +54,59 @@ app.get("/api/v1/status/:id", async (req, res) => {
   }
 });
 
+app.post("/user/signup", async (req, res) => {
+  const data = AuthInput.safeParse(req.body);
+
+  if (!data.success) {
+    res.status(403).send("");
+    return;
+  }
+  try {
+    const user = await prismaClient.user.create({
+      data: {
+        username: data.data.username,
+        password: data.data.password,
+      },
+    });
+
+    res.json({id: user.id})
+  } catch (e) {
+    res.status(403).json({ message: "Username already exists" });
+  }
+});
+
+app.post("/user/signin", async (require, res) => {
+  const data = AuthInput.safeParse(require.body);
+
+  if (!data.success) {
+    res.status(403).json({error: data.error});
+    return;
+  }
+
+  try {
+    const user = await prismaClient.user.findFirst({
+      where: {
+        username: data.data.username
+      }
+    });
+
+    if (user?.password !== data.data.password) {
+      res.status(401).json({message: "Invalid credentials"});
+      return;
+    }
+
+    const token = jwt.sign({
+      sub: user?.id
+    }, process.env.JWT_SECRET!);
+
+    res.json({
+      jwt: token
+    })
+  } catch (e) {
+    res.status(500).json({message: "Internal server error"});
+  }
+});
+
 app.listen(process.env.PORT || 3000, () => {
-  console.log('Server is running on port 3000');
+  console.log(`Server is running on port ${process.env.PORT}`);
 });
