@@ -11,7 +11,6 @@ app.use(express.json());
 
 app.post("/api/v1/website", authMiddleware, async (req, res) => {
   try {
-    console.log(req.body);
     const { url } = req.body;
     if (!url) {
       res.status(400).json({ message: "Url is required" });
@@ -47,14 +46,24 @@ app.get("/api/v1/status/:id", authMiddleware,async (req, res) => {
         userId,
       },
       include: {
-        ticks: true,
+        ticks: {
+          orderBy: {
+            createdAt: "desc",
+          },
+          take: 1,
+        },
       },
     });
     if (!website) {
       res.status(404).json({ message: "Website not found" });
       return;
     }
-    res.status(200).json({ website });
+    res.status(200).json({ 
+      userId: website.userId,
+      url: website.url,
+      id: website.id,
+
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Failed to connect to database" });
