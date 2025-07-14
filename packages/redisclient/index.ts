@@ -87,7 +87,6 @@ export async function xReadGroup(consumerGroup: string, workerId: string): Promi
     return null;
   }
 
-  console.log("Stream:", entry.messages);
   return entry.messages;
 }
 
