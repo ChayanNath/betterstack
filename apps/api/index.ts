@@ -9,7 +9,7 @@ const app = express();
 
 app.use(express.json());
 
-app.post("/api/v1/website", authMiddleware, async (req, res) => {
+app.post("/website", authMiddleware, async (req, res) => {
   try {
     const { url } = req.body;
     if (!url) {
@@ -32,7 +32,7 @@ app.post("/api/v1/website", authMiddleware, async (req, res) => {
   }
 });
 
-app.get("/api/v1/status/:id", authMiddleware,async (req, res) => {
+app.get("/website/:id", authMiddleware,async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user?.id;
