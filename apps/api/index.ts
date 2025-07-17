@@ -4,72 +4,15 @@ import { prismaClient } from 'store/client';
 import { AuthInput } from './types';
 import jwt from "jsonwebtoken";
 import authMiddleware from './middleware';
+import cors from 'cors';
+
 const app = express();
 
 
 app.use(express.json());
-
-app.post("/website", authMiddleware, async (req, res) => {
-  try {
-    const { url } = req.body;
-    if (!url) {
-      res.status(400).json({ message: "Url is required" });
-      return;
-    }
-    const website = await prismaClient.website.create({
-      data: {
-        url,
-        userId: req?.user?.id,
-      },
-    });
-    res
-      .status(201)
-      .json({ id: website.id, message: "Website created successfully" });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Failed to connect to database" });
-    return;
-  }
-});
-
-app.get("/website/:id", authMiddleware,async (req, res) => {
-  try {
-    const { id } = req.params;
-    const userId = req.user?.id;
-    if (!id) {
-      res.status(400).json({ message: "Id is required" });
-      return;
-    }
-    const website = await prismaClient.website.findUnique({
-      where: {
-        id,
-        userId,
-      },
-      include: {
-        ticks: {
-          orderBy: {
-            createdAt: "desc",
-          },
-          take: 1,
-        },
-      },
-    });
-    if (!website) {
-      res.status(404).json({ message: "Website not found" });
-      return;
-    }
-    res.status(200).json({ 
-      userId: website.userId,
-      url: website.url,
-      id: website.id,
-
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Failed to connect to database" });
-    return;
-  }
-});
+app.use(cors({
+  origin: 'http://localhost:3000',
+}));
 
 app.post("/user/signup", async (req, res) => {
   const data = AuthInput.safeParse(req.body);
@@ -123,6 +66,91 @@ app.post("/user/signin", async (require, res) => {
     })
   } catch (e) {
     res.status(500).json({message: "Internal server error"});
+  }
+});
+
+app.post("/website", authMiddleware, async (req, res) => {
+  try {
+    const { url } = req.body;
+    if (!url) {
+      res.status(400).json({ message: "Url is required" });
+      return;
+    }
+    const website = await prismaClient.website.create({
+      data: {
+        url,
+        userId: req?.user?.id,
+      },
+    });
+    res
+      .status(201)
+      .json({ id: website.id, message: "Website created successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to connect to database" });
+    return;
+  }
+});
+
+app.get("/website/:id", authMiddleware,async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user?.id;
+    if (!id) {
+      res.status(400).json({ message: "Id is required" });
+      return;
+    }
+    const website = await prismaClient.website.findUnique({
+      where: {
+        id,
+        userId,
+      },
+      include: {
+        ticks: {
+          orderBy: {
+            createdAt: "desc",
+          },
+          take: 10,
+        },
+      },
+    });
+    if (!website) {
+      res.status(404).json({ message: "Website not found" });
+      return;
+    }
+    res.status(200).json({ 
+      userId: website.userId,
+      url: website.url,
+      id: website.id,
+
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to connect to database" });
+    return;
+  }
+});
+
+app.get("/websites", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    const websites = await prismaClient.website.findMany({
+      where: {
+        userId,
+      },
+      include: {
+        ticks: {
+          orderBy: {
+            createdAt: "desc",
+          },
+          take: 10,
+        },
+      },
+    });
+    res.status(200).json(websites);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to connect to database" });
   }
 });
 

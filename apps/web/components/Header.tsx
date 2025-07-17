@@ -3,8 +3,10 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Menu, X, Shield } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function Header() {
+  const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
@@ -24,23 +26,16 @@ export default function Header() {
             <a href="#features" className="text-gray-300 hover:text-white transition-colors">
               Features
             </a>
-            <a href="#pricing" className="text-gray-300 hover:text-white transition-colors">
-              Pricing
-            </a>
-            <a href="#docs" className="text-gray-300 hover:text-white transition-colors">
-              Docs
-            </a>
-            <a href="#support" className="text-gray-300 hover:text-white transition-colors">
-              Support
-            </a>
           </nav>
 
           {/* CTA Buttons */}
           <div className="hidden md:flex items-center space-x-4">
-            <Button variant="ghost" className="text-gray-300 hover:text-white hover:bg-gray-800">
+            <Button variant="ghost" className="text-gray-300 hover:text-white hover:bg-gray-800"
+              onClick={() => router.push('/signin')}>
               Sign In
             </Button>
-            <Button className="bg-blue-500 hover:bg-blue-600 text-white">
+            <Button className="bg-blue-500 hover:bg-blue-600 text-white"
+              onClick={() => router.push('/signup')}>
               Start Free Trial
             </Button>
           </div>
@@ -61,9 +56,6 @@ export default function Header() {
           <div className="px-4 py-3 space-y-3">
             <a href="#features" className="block py-2 text-gray-300 hover:text-white">
               Features
-            </a>
-            <a href="#pricing" className="block py-2 text-gray-300 hover:text-white">
-              Pricing
             </a>
             <a href="#docs" className="block py-2 text-gray-300 hover:text-white">
               Docs
