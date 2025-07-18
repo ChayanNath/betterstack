@@ -1,84 +1,56 @@
-# Turborepo starter
+# BetterStack
 
-This Turborepo starter is maintained by the Turborepo core team.
+BetterStack is a web application that allows you to monitor the uptime and response time of your websites. It provides a simple and intuitive interface for managing your websites and tracking their performance.
 
-## Using this example
+## Features
 
-Run the following command:
+- Monitor multiple websites
+- Track uptime and response time
+- View website statistics
+- Add and manage websites
+- Customize the dashboard layout
+- Supports multiple regions
 
-```sh
-npx create-turbo@latest
+## Getting Started
+
+To get started with BetterStack, follow these steps:
+
+1. Clone the repository:
+
+```bash
+git clone https://github.com/chayan/betterstack.git
 ```
 
-## What's inside?
+2. Install dependencies:
 
-This Turborepo includes the following packages/apps:
-
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-```
-cd my-turborepo
-pnpm build
+```bash
+cd betterstack
+npm install
 ```
 
-### Develop
+3. Create a `.env` file in the root directory and add the following variables:
 
-To develop all apps and packages, run the following command:
-
-```
-cd my-turborepo
-pnpm dev
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-cd my-turborepo
-npx turbo login
+```bash
+DATABASE_URL=postgresql://user:password@localhost:5432/betterstack
+JWT_SECRET=your_secret_key
+REGION_NAME=us-east
+WORKER_ID=1
 ```
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+Replace `DATABASE_URL` with the connection string to your PostgreSQL database. Replace `JWT_SECRET` with a secret key for your application. Replace `REGION_NAME` with the name of the region you want to monitor. Replace `WORKER_ID` with a unique identifier for your worker.
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+4. Start the application:
 
+```bash
+npm run dev
 ```
-npx turbo link
-```
 
-## Useful Links
+5. Open your browser and navigate to `http://localhost:3000` to access the dashboard.
 
-Learn more about the power of Turborepo:
+## Contributing
 
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+Contributions are welcome! If you have any suggestions or improvements, please open an issue or submit a pull request.
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more information.
