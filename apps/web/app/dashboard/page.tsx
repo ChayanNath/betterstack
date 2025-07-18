@@ -62,6 +62,7 @@ export default function Dashboard() {
       const res = await axios.get(`${BACKEND_URL}/websites?page=${page}&limit=10`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
+      console.log(res.data.data);
       setWebsites(res.data.data);
       setTotalPages(res.data.totalPages);
     } catch (error) {
@@ -84,12 +85,7 @@ export default function Dashboard() {
         },
       })
       .then((res) => {
-        const newWebsite: Website = {
-          ...res.data,
-          ticks: [],
-        };
-        setWebsites((prev) => [newWebsite, ...prev]);
-        setPage(1);
+        fetchWebsites();
       })
       .catch((err) => {
         console.error(err);
