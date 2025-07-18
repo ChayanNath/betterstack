@@ -84,7 +84,7 @@ app.post("/website", authMiddleware, async (req, res) => {
     });
     res
       .status(201)
-      .json({ id: website.id, message: "Website created successfully" });
+      .json({ ...website, message: "Website created successfully" });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Failed to connect to database" });

@@ -7,27 +7,20 @@ import { X, Globe, AlertCircle } from 'lucide-react';
 interface AddWebsiteModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (website: { name: string; url: string }) => void;
+  onAdd: (website: { url: string }) => void;
 }
 
 export default function AddWebsiteModal({ isOpen, onClose, onAdd }: AddWebsiteModalProps) {
   const [formData, setFormData] = useState({
-    name: '',
     url: ''
   });
   const [errors, setErrors] = useState({
-    name: '',
     url: ''
   });
 
   const validateForm = () => {
-    const newErrors = { name: '', url: '' };
+    const newErrors = {url: '' };
     let isValid = true;
-
-    if (!formData.name.trim()) {
-      newErrors.name = 'Website name is required';
-      isValid = false;
-    }
 
     if (!formData.url.trim()) {
       newErrors.url = 'Website URL is required';
@@ -55,8 +48,8 @@ export default function AddWebsiteModal({ isOpen, onClose, onAdd }: AddWebsiteMo
     
     if (validateForm()) {
       onAdd(formData);
-      setFormData({ name: '', url: '' });
-      setErrors({ name: '', url: '' });
+      setFormData({  url: '' });
+      setErrors({  url: '' });
       onClose();
     }
   };
@@ -72,8 +65,8 @@ export default function AddWebsiteModal({ isOpen, onClose, onAdd }: AddWebsiteMo
   };
 
   const handleClose = () => {
-    setFormData({ name: '', url: '' });
-    setErrors({ name: '', url: '' });
+    setFormData({ url: '' });
+    setErrors({ url: '' });
     onClose();
   };
 
@@ -103,33 +96,7 @@ export default function AddWebsiteModal({ isOpen, onClose, onAdd }: AddWebsiteMo
           </button>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-2">
-              Website Name
-            </label>
-            <input
-              id="name"
-              name="name"
-              type="text"
-              value={formData.name}
-              onChange={handleChange}
-              className={`w-full px-3 py-2 bg-gray-700 border rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent transition-colors ${
-                errors.name 
-                  ? 'border-red-500 focus:ring-red-500' 
-                  : 'border-gray-600 focus:ring-blue-500'
-              }`}
-              placeholder="e.g., My Website"
-            />
-            {errors.name && (
-              <div className="flex items-center mt-1 text-sm text-red-400">
-                <AlertCircle className="h-4 w-4 mr-1" />
-                {errors.name}
-              </div>
-            )}
-          </div>
-
           <div>
             <label htmlFor="url" className="block text-sm font-medium text-gray-300 mb-2">
               Website URL
@@ -155,7 +122,6 @@ export default function AddWebsiteModal({ isOpen, onClose, onAdd }: AddWebsiteMo
             )}
           </div>
 
-          {/* Info Box */}
           <div className="bg-blue-900/20 border border-blue-800 rounded-md p-3">
             <div className="flex items-start">
               <AlertCircle className="h-5 w-5 text-blue-400 mr-2 mt-0.5 flex-shrink-0" />

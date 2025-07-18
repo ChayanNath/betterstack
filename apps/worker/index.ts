@@ -1,8 +1,11 @@
 import { xReadGroup, xAckBulk } from "redisclient/client";
 import axios from "axios";
 import { prismaClient } from "store/client";
+import dotenv from "dotenv";
 
-const REGION_ID = process.env.REGION_ID;
+dotenv.config();
+
+const REGION_NAME = process.env.REGION_NAME;
 const WORKER_ID = process.env.WORKER_ID;
 
 const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
@@ -15,11 +18,22 @@ type RedisMessage = {
   };
 };
 
-// Handles a single website check
-async function processWebsite({
-  id: redisMessageId,
-  message,
-}: RedisMessage): Promise<string | null> {
+async function getRegionId(regionName: string): Promise<string> {
+  const region = await prismaClient.region.findUnique({
+    where: { name: regionName },
+  });
+
+  if (!region) {
+    throw new Error(`Region "${regionName}" not found in the database`);
+  }
+
+  return region.id;
+}
+
+async function processWebsite(
+  { id: redisMessageId, message }: RedisMessage,
+  regionId: string
+): Promise<string | null> {
   const url = message.url;
   const websiteId = message.id;
 
@@ -38,7 +52,7 @@ async function processWebsite({
       data: {
         response_time_ms: endTime - startTime,
         status: "up",
-        region_id: REGION_ID!,
+        region_id: regionId,
         website_id: websiteId,
       },
     });
@@ -51,7 +65,7 @@ async function processWebsite({
       data: {
         response_time_ms: endTime - startTime,
         status: "down",
-        region_id: REGION_ID!,
+        region_id: regionId,
         website_id: websiteId,
       },
     });
@@ -61,32 +75,35 @@ async function processWebsite({
 }
 
 async function main() {
-  if (!REGION_ID) throw new Error("REGION_ID is required");
+  if (!REGION_NAME) throw new Error("REGION_NAME is required");
   if (!WORKER_ID) throw new Error("WORKER_ID is required");
+
+  const regionId = await getRegionId(REGION_NAME);
+
+  console.log(`Worker started for region "${REGION_NAME}" with ID: ${regionId}`);
 
   while (true) {
     try {
-      const response = await xReadGroup(REGION_ID, WORKER_ID);
+      const response = await xReadGroup(regionId, WORKER_ID);
 
       if (!response || response.length === 0) {
-        console.log("No response from Redis. Sleeping...");
         await sleep(500);
         continue;
       }
 
       const results = await Promise.allSettled(
-        response
-          .map(
-            (msg) =>
-              ({
-                id: msg.id,
-                message: {
-                  url: msg.message.url,
-                  id: msg.message.id,
-                },
-              }) as RedisMessage
+        response.map((msg) =>
+          processWebsite(
+            {
+              id: msg.id,
+              message: {
+                url: msg.message.url!,
+                id: msg.message.id!,
+              },
+            },
+            regionId
           )
-          .map((message) => processWebsite(message))
+        )
       );
 
       const ackIds = results
@@ -98,7 +115,7 @@ async function main() {
         .filter((id): id is string => !!id);
 
       if (ackIds.length > 0) {
-        await xAckBulk(REGION_ID, ackIds);
+        await xAckBulk(regionId, ackIds);
         console.log(`Acked ${ackIds.length} messages`);
       }
     } catch (err) {
@@ -108,4 +125,6 @@ async function main() {
   }
 }
 
-main();
+main().catch((err) => {
+  console.error("Worker failed to start:", err);
+});

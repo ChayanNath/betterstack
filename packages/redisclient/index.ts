@@ -1,52 +1,110 @@
-import { createClient } from "redis";
+import { createClient, type RedisClientType } from "redis";
 
-const client = createClient();
-
-client.on("error", (err) => console.error("Redis client error", err));
-
-await client.connect();
-
+/**
+ * CENTRAL CONFIG
+ */
 const STREAM_NAME = "betteruptime:website";
+let client: RedisClientType | null = null;
+let isConnected = false;
 
-type WebsiteEvent = {
+async function connectIfNeeded() {
+  if (isConnected && client) return;
+
+  client = createClient();
+  client.on("error", (err: any) => console.error("Redis client error", err));
+  await client.connect();
+  isConnected = true;
+}
+
+/**
+ * Ensure the consumer group exists for the stream.
+ * - MKSTREAM creates the stream if missing.
+ * - Ignore BUSYGROUP (already exists).
+ */
+async function ensureGroup(consumerGroup: string) {
+  await connectIfNeeded();
+  if (!client) throw new Error("Redis client not initialized");
+
+  try {
+    // "0" = read from beginning; use "$" to read only new entries from creation forward
+    await client.xGroupCreate(STREAM_NAME, consumerGroup, "0", { MKSTREAM: true });
+    // eslint-disable-next-line no-console
+    console.log(`Created consumer group "${consumerGroup}" on stream "${STREAM_NAME}".`);
+  } catch (err: any) {
+    if (typeof err?.message === "string" && err.message.includes("BUSYGROUP")) {
+      // group already exists — fine
+      return;
+    }
+    throw err;
+  }
+}
+
+/**
+ * Shape of a site uptime event that we write to the stream.
+ */
+export type WebsiteEvent = {
   url: string;
-  id: string;
+  id: string; // website_id in DB
 };
 
-type StreamMessage = {
+/**
+ * Raw stream message returned by Redis client.
+ */
+export type StreamMessage = {
   id: string;
-  message: { [key: string]: string };
+  message: Record<string, string>;
 };
 
+/**
+ * Redis returns an array of { name, messages } objects when reading groups.
+ */
 type StreamEntry = {
   name: string;
   messages: StreamMessage[];
 };
 
-async function xAdd({ url, id }: WebsiteEvent) {
-  if (!url || !id) {
-    throw new Error("Invalid WebsiteEvent: Missing url or id");
-  }
-
-  await client.xAdd(STREAM_NAME, "*", {
-    url,
-    id,
-  });
+/**
+ * Guard fn to check structure from xReadGroup.
+ */
+function isStreamEntryArray(value: unknown): value is StreamEntry[] {
+  return (
+    Array.isArray(value) &&
+    value.length > 0 &&
+    typeof value[0] === "object" &&
+    value[0] !== null &&
+    "name" in value[0] &&
+    "messages" in value[0] &&
+    Array.isArray((value[0] as any).messages)
+  );
 }
 
-export async function xAddBulk(websites: WebsiteEvent[]) {
-  const pipeline = client.multi();
+/**
+ * Add a single uptime event to the stream.
+ */
+export async function xAdd(event: WebsiteEvent) {
+  await connectIfNeeded();
+  if (!client) throw new Error("Redis client not initialized");
 
+  const { url, id } = event;
+  if (!url || !id) throw new Error("Invalid WebsiteEvent: Missing url or id");
+
+  await client.xAdd(STREAM_NAME, "*", { url, id });
+}
+
+/**
+ * Bulk add multiple events in a pipeline.
+ */
+export async function xAddBulk(websites: WebsiteEvent[]) {
+  await connectIfNeeded();
+  if (!client) throw new Error("Redis client not initialized");
+
+  const pipeline = client.multi();
   for (const site of websites) {
     if (!site?.url || !site?.id) {
       console.warn("Skipping invalid website event:", site);
       continue;
     }
-
-    pipeline.xAdd("betteruptime:website", "*", {
-      url: site.url,
-      id: site.id,
-    });
+    pipeline.xAdd(STREAM_NAME, "*", { url: site.url, id: site.id });
   }
 
   try {
@@ -56,45 +114,57 @@ export async function xAddBulk(websites: WebsiteEvent[]) {
   }
 }
 
-function isStreamEntryArray(value: any): value is StreamEntry[] {
-  return (
-    Array.isArray(value) &&
-    value.length > 0 &&
-    typeof value[0] === 'object' &&
-    value[0] !== null &&
-    'name' in value[0] &&
-    'messages' in value[0] &&
-    Array.isArray(value[0].messages)
-  );
-}
+/**
+ * Read messages for this worker via consumer group.
+ * Automatically ensures the group exists the first time.
+ *
+ * @param consumerGroup Region ID (or region name) — the group name
+ * @param workerId Unique consumer name (WORKER_ID)
+ * @returns Array of StreamMessage objects, or null if none
+ */
+export async function xReadGroup(
+  consumerGroup: string,
+  workerId: string
+): Promise<StreamMessage[] | null> {
+  await ensureGroup(consumerGroup); // creates stream & group if needed
+  if (!client) throw new Error("Redis client not initialized");
 
-export async function xReadGroup(consumerGroup: string, workerId: string): Promise<StreamMessage[] | null> {
+  // '>' = new messages that were never delivered to any consumer
   const stream = await client.xReadGroup(
     consumerGroup,
     workerId,
-    { key: STREAM_NAME, id: '>' },
-    { COUNT: 5 }
+    { key: STREAM_NAME, id: ">" },
+    { COUNT: 5, BLOCK: 500 } // BLOCK optional; waits ms for new msgs
   );
 
   if (!isStreamEntryArray(stream)) {
-    console.log("Stream: [] (unexpected type)", stream);
+    // no messages
     return null;
   }
 
   const entry = stream[0];
-  if (!entry || !Array.isArray(entry.messages)) {
-    console.log("Stream: [] (invalid entry)");
-    return null;
-  }
+  if (!entry?.messages?.length) return null;
 
   return entry.messages;
 }
 
-async function xAck(consumerGroup: string, eventId: string) {
-  await client.xAck(STREAM_NAME,consumerGroup, eventId);
+/**
+ * Ack a single message.
+ */
+export async function xAck(consumerGroup: string, eventId: string) {
+  await connectIfNeeded();
+  if (!client) throw new Error("Redis client not initialized");
+  await client.xAck(STREAM_NAME, consumerGroup, eventId);
 }
 
+/**
+ * Ack multiple messages in a pipeline.
+ */
 export async function xAckBulk(consumerGroup: string, eventIds: string[]) {
+  if (!eventIds.length) return;
+  await connectIfNeeded();
+  if (!client) throw new Error("Redis client not initialized");
+
   const pipeline = client.multi();
   for (const eventId of eventIds) {
     pipeline.xAck(STREAM_NAME, consumerGroup, eventId);
