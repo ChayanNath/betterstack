@@ -13,6 +13,8 @@ import {
   Trash2,
   RefreshCcw,
   AlertCircle,
+  ArrowLeft,
+  ArrowRight,
 } from "lucide-react";
 import AddWebsiteModal from "@/components/AddWebsiteModal";
 import axios from "axios";
@@ -51,26 +53,28 @@ export default function Dashboard() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [filter, setFilter] = useState("");
   const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   const fetchWebsites = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${BACKEND_URL}/websites`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
+      const res = await axios.get(`${BACKEND_URL}/websites?page=${page}&limit=10`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
-      setWebsites(res.data);
-    } catch (err) {
-      console.error(err);
+      setWebsites(res.data.data);
+      setTotalPages(res.data.totalPages);
+    } catch (error) {
+      console.error('Failed to fetch websites', error);
     } finally {
       setLoading(false);
     }
   };
 
+
   useEffect(() => {
     fetchWebsites();
-  }, []);
+  }, [page]);
 
   const handleAddWebsite = (websiteData: { url: string }) => {
     axios
@@ -85,6 +89,7 @@ export default function Dashboard() {
           ticks: [],
         };
         setWebsites((prev) => [newWebsite, ...prev]);
+        setPage(1);
       })
       .catch((err) => {
         console.error(err);
@@ -151,18 +156,36 @@ export default function Dashboard() {
               onChange={(e) => setFilter(e.target.value)}
             />
             <Button onClick={fetchWebsites} variant="outline">
-              <RefreshCcw className={`h-4 w-4 ${loading ? "animate-spin " : ""}`} /> Refresh
+              <RefreshCcw
+                className={`h-4 w-4 ${loading ? "animate-spin " : ""}`}
+              />{" "}
+              Refresh
             </Button>
-            <Button onClick={() => setIsAddModalOpen(true)} className="bg-blue-600 text-white">
+            <Button
+              onClick={() => setIsAddModalOpen(true)}
+              className="bg-blue-600 text-white"
+            >
               <Plus className="h-4 w-4 mr-2" /> Add Website
             </Button>
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-          <StatCard label="Total Websites" value={websites.length} icon={<Globe />} />
-          <StatCard label="Online" value={upWebsites} icon={<CheckCircle className="text-green-400" />} />
-          <StatCard label="Offline" value={downWebsites} icon={<XCircle className="text-red-400" />} />
+          <StatCard
+            label="Total Websites"
+            value={websites.length}
+            icon={<Globe />}
+          />
+          <StatCard
+            label="Online"
+            value={upWebsites}
+            icon={<CheckCircle className="text-green-400" />}
+          />
+          <StatCard
+            label="Offline"
+            value={downWebsites}
+            icon={<XCircle className="text-red-400" />}
+          />
         </div>
 
         <div className="bg-gray-800 rounded-lg overflow-hidden border border-gray-700">
@@ -183,11 +206,17 @@ export default function Dashboard() {
                   <tr key={w.id} className="hover:bg-gray-700/50">
                     <td className="px-6 py-4 whitespace-nowrap flex items-center gap-2">
                       {getStatusIcon(status)}
-                      <span className={getStatusBadge(status)}>{status.toUpperCase()}</span>
+                      <span className={getStatusBadge(status)}>
+                        {status.toUpperCase()}
+                      </span>
                     </td>
                     <td className="px-6 py-4 text-white">{w.url}</td>
-                    <td className="px-6 py-4 text-white">{getResponseTime(w)}</td>
-                    <td className="px-6 py-4 text-white">{getLastChecked(w)}</td>
+                    <td className="px-6 py-4 text-white">
+                      {getResponseTime(w)}
+                    </td>
+                    <td className="px-6 py-4 text-white">
+                      {getLastChecked(w)}
+                    </td>
                     <td className="px-6 py-4 flex gap-2">
                       <Button variant="ghost" size="sm">
                         <ExternalLink className="h-4 w-4" />
@@ -195,7 +224,11 @@ export default function Dashboard() {
                       <Button variant="ghost" size="sm">
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm" className="text-red-400">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-400"
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </td>
@@ -204,6 +237,31 @@ export default function Dashboard() {
               })}
             </tbody>
           </table>
+          {filteredWebsites.length > 0 && (
+            <div className="flex justify-center">
+              <div className="flex items-center p-2 gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+
+                <span className="text-white">
+                  Page <strong>{page}</strong> of <strong>{totalPages}</strong>
+                </span>
+
+                <Button
+                  variant="outline"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                >
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
 
         {filteredWebsites.length === 0 && (

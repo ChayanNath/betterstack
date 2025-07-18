@@ -134,23 +134,41 @@ app.get("/website/:id", authMiddleware,async (req, res) => {
 app.get("/websites", authMiddleware, async (req, res) => {
   try {
     const userId = req.user?.id;
-    const websites = await prismaClient.website.findMany({
-      where: {
-        userId,
-      },
-      include: {
-        ticks: {
-          orderBy: {
-            createdAt: "desc",
-          },
-          take: 10,
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+    const [websites, total] = await Promise.all([
+      prismaClient.website.findMany({
+        where: {
+          userId,
         },
-      },
+        include: {
+          ticks: {
+            orderBy: {
+              createdAt: "desc",
+            },
+            take: 10,
+          },
+        },
+        skip,
+        take: limit,
+      }),
+      prismaClient.website.count({
+        where: {
+          userId,
+        },
+      }),
+    ]);
+
+    res.status(200).json({
+      data: websites,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
     });
-    res.status(200).json(websites);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Failed to connect to database" });
+    res.status(500).json({ message: "Failed to fetch websites" });
   }
 });
 
