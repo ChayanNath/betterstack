@@ -155,26 +155,6 @@ export default function SignUp() {
               )}
             </div>
 
-            <div className="flex items-center">
-              <input
-                id="terms"
-                name="terms"
-                type="checkbox"
-                required
-                className="h-4 w-4 text-blue-500 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:ring-2"
-              />
-              <label htmlFor="terms" className="ml-2 block text-sm text-gray-300">
-                I agree to the{' '}
-                <a href="#" className="text-blue-400 hover:text-blue-300 transition-colors">
-                  Terms of Service
-                </a>{' '}
-                and{' '}
-                <a href="#" className="text-blue-400 hover:text-blue-300 transition-colors">
-                  Privacy Policy
-                </a>
-              </label>
-            </div>
-
             <Button
               type="submit"
               className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-md transition-colors font-medium"

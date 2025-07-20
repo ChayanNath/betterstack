@@ -15,6 +15,8 @@ export default function SignIn() {
     password: "",
   });
 
+  const [error, setError] = useState<string | null>(null);
+
   const router = useRouter();
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -22,12 +24,14 @@ export default function SignIn() {
     axios
       .post(`${BACKEND_URL}/user/signin`, formData)
       .then((res) => {
+        setError(null);
         const token = res.data.jwt;
         localStorage.setItem("token", token);
         router.push("/dashboard");
       })
       .catch((err) => {
         console.log(err);
+        setError(err.response.data.message);
       });
   };
 
@@ -55,7 +59,7 @@ export default function SignIn() {
             </h2>
             <p className="text-gray-400">Sign in to your account</p>
           </div>
-
+          {error && <div className="text-red-500 text-center">{error}</div>}
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
@@ -110,20 +114,6 @@ export default function SignIn() {
             </div>
 
             <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  id="remember-me"
-                  name="remember-me"
-                  type="checkbox"
-                  className="h-4 w-4 text-blue-500 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:ring-2"
-                />
-                <label
-                  htmlFor="remember-me"
-                  className="ml-2 block text-sm text-gray-300"
-                >
-                  Remember me
-                </label>
-              </div>
               <a
                 href="#"
                 className="text-sm text-blue-400 hover:text-blue-300 transition-colors"

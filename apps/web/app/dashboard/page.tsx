@@ -19,6 +19,7 @@ import {
 import AddWebsiteModal from "@/components/AddWebsiteModal";
 import axios from "axios";
 import { BACKEND_URL } from "@/lib/utils";
+import { useRouter } from "next/navigation";
 
 interface WebsiteTick {
   status: "up" | "down";
@@ -55,6 +56,8 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+
+  const router = useRouter();
 
   const fetchWebsites = async () => {
     setLoading(true);
@@ -135,7 +138,13 @@ export default function Dashboard() {
               <Shield className="h-8 w-8 text-blue-400" />
               <span className="text-xl font-bold text-white">BetterUptime</span>
             </div>
-            <div className="text-gray-300">Welcome back, User</div>
+            <Button className="bg-blue-500 hover:bg-blue-600 text-white"
+              onClick={() => {
+                localStorage.removeItem('token');
+                router.push('/');
+              }}>
+              Sign out
+            </Button>
           </div>
         </div>
       </header>
@@ -214,7 +223,7 @@ export default function Dashboard() {
                       {getLastChecked(w)}
                     </td>
                     <td className="px-6 py-4 flex gap-2">
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" onClick={() => router.push(`/website/${w.id}`)}>
                         <ExternalLink className="h-4 w-4" />
                       </Button>
                       <Button variant="ghost" size="sm">
