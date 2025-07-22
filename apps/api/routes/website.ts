@@ -1,8 +1,7 @@
 import express, { type NextFunction, type Request, type Response } from 'express';
 import { prismaClient } from 'store/client';
 import authMiddleware from '../middleware/authMiddleware';
-import logger from '../logger';
-import { log } from 'winston';
+import logger from 'logger/client';
 
 const router = express.Router();
 

@@ -6,9 +6,13 @@
   "devDependencies": {
     "@types/bun": "latest"
   },
+  "scripts": {
+    "dev": "bun run index.ts"
+  },
   "peerDependencies": {
     "typescript": "^5",
     "store": "workspace:*",
-    "redisclient": "workspace:*"
+    "redisclient": "workspace:*",
+    "logger": "workspace:*"
   }
 }

@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 import { errorHandler } from './middleware/errorMiddleware.ts';
 import authRoutes from './routes/auth';
 import websiteRoutes from './routes/website';
-import logger from './logger';
+import logger from 'logger/client';
 import { validateEnv } from './utils/validateEnv.ts';
 
 dotenv.config();

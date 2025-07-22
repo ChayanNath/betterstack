@@ -2,7 +2,7 @@ import express, { type NextFunction, type Request, type Response } from 'express
 import { prismaClient } from 'store/client';
 import { AuthInput } from '../types';
 import jwt from 'jsonwebtoken';
-import logger from '../logger';
+import logger from 'logger/client';
 import bcrypt from 'bcrypt';
 
 const router = express.Router();

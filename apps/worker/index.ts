@@ -2,6 +2,7 @@ import { xReadGroup, xAckBulk } from "redisclient/client";
 import axios from "axios";
 import { prismaClient } from "store/client";
 import dotenv from "dotenv";
+import logger from 'logger/client';
 
 dotenv.config();
 
@@ -24,6 +25,7 @@ async function getRegionId(regionName: string): Promise<string> {
   });
 
   if (!region) {
+    logger.error(`Region "${regionName}" not found in the database`);
     throw new Error(`Region "${regionName}" not found in the database`);
   }
 
@@ -38,7 +40,7 @@ async function processWebsite(
   const websiteId = message.id;
 
   if (!url || !websiteId) {
-    console.warn("Invalid message format:", message);
+    logger.warn("Invalid message format:", message);
     return null;
   }
 
@@ -80,7 +82,7 @@ async function main() {
 
   const regionId = await getRegionId(REGION_NAME);
 
-  console.log(`Worker started for region "${REGION_NAME}" with ID: ${regionId}`);
+  logger.info(`Worker started for region "${REGION_NAME}" with ID: ${regionId}`);
 
   while (true) {
     try {
@@ -116,10 +118,10 @@ async function main() {
 
       if (ackIds.length > 0) {
         await xAckBulk(regionId, ackIds);
-        console.log(`Acked ${ackIds.length} messages`);
+        logger.info(`Acked ${ackIds.length} messages`);
       }
     } catch (err) {
-      console.error("Error in worker loop:", err);
+      logger.error("Error in worker loop:", err);
       await sleep(1000);
     }
   }
