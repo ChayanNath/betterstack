@@ -51,9 +51,7 @@ const fetchWebsiteDetails = () => {
       setLoading(true);
       axios
         .get(`${BACKEND_URL}/website/${websiteId}`, {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
+            withCredentials: true,
         })
         .then((res) => {
           const websiteData = res.data;

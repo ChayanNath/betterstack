@@ -4,8 +4,7 @@ import jwt from "jsonwebtoken";
 
 
 const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  const token: string | undefined = req.cookies?.token;
 
   if (!token) {
     res.status(401).json({ message: 'No token provided' });
@@ -17,7 +16,7 @@ const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
       res.status(401).json({ message: 'Invalid or expired token' });
       return;
     }
-    req.user = { id: (decoded as any).id };
+    req.user = { id: (decoded as any).id, username : (decoded as any).username };
     next();
   });
 };

@@ -56,20 +56,22 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [user, setUser] = useState<{ id: string, username: string } | null>(null);
 
   const router = useRouter();
 
   const fetchWebsites = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${BACKEND_URL}/websites?page=${page}&limit=10`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      });
+      const res = await axios.get(
+        `${BACKEND_URL}/websites?page=${page}&limit=10`,
+        { withCredentials: true }
+      );
       console.log(res.data.data);
       setWebsites(res.data.data);
       setTotalPages(res.data.totalPages);
     } catch (error) {
-      console.error('Failed to fetch websites', error);
+      console.error("Failed to fetch websites", error);
     } finally {
       setLoading(false);
     }
@@ -80,12 +82,28 @@ export default function Dashboard() {
     fetchWebsites();
   }, [page]);
 
+  const fetchUser = () => {
+    axios
+      .get(`${BACKEND_URL}/user/me`, {
+        withCredentials: true,
+      })
+      .then((res) => {
+        setUser(res.data.user);
+      })
+      .catch((err) => {
+        console.error(err);
+        router.push("/");
+      });
+  };
+
+  useEffect(() => {
+    fetchUser();
+  }, []);
+
   const handleAddWebsite = (websiteData: { url: string }) => {
     axios
       .post(`${BACKEND_URL}/website`, websiteData, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
+        withCredentials: true,
       })
       .then((res) => {
         fetchWebsites();
@@ -138,11 +156,21 @@ export default function Dashboard() {
               <Shield className="h-8 w-8 text-blue-400" />
               <span className="text-xl font-bold text-white">BetterUptime</span>
             </div>
-            <Button className="bg-blue-500 hover:bg-blue-600 text-white"
-              onClick={() => {
-                localStorage.removeItem('token');
-                router.push('/');
-              }}>
+            <Button
+              className="bg-blue-500 hover:bg-blue-600 text-white"
+              onClick={async () => {
+                try {
+                  await axios.post(
+                    `${BACKEND_URL}/user/logout`,
+                    {},
+                    { withCredentials: true }
+                  );
+                  router.push("/");
+                } catch (err) {
+                  console.error("Logout failed", err);
+                }
+              }}
+            >
               Sign out
             </Button>
           </div>
@@ -223,7 +251,11 @@ export default function Dashboard() {
                       {getLastChecked(w)}
                     </td>
                     <td className="px-6 py-4 flex gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => router.push(`/website/${w.id}`)}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => router.push(`/website/${w.id}`)}
+                      >
                         <ExternalLink className="h-4 w-4" />
                       </Button>
                       <Button variant="ghost" size="sm">

@@ -19,20 +19,24 @@ export default function SignIn() {
 
   const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    axios
-      .post(`${BACKEND_URL}/user/signin`, formData)
-      .then((res) => {
-        setError(null);
-        const token = res.data.jwt;
-        localStorage.setItem("token", token);
-        router.push("/dashboard");
-      })
-      .catch((err) => {
-        console.log(err);
-        setError(err.response.data.message);
-      });
+    setError(null);
+
+    try {
+      await axios.post(
+        `${BACKEND_URL}/user/signin`,
+        formData,
+        {
+          withCredentials: true,
+        }
+      );
+      router.push("/dashboard");
+    } catch (err: any) {
+      console.error(err);
+      const message = err.response?.data?.message || "Login failed";
+      setError(message);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

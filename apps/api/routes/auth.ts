@@ -4,6 +4,8 @@ import { AuthInput } from '../types';
 import jwt from 'jsonwebtoken';
 import logger from 'logger/client';
 import bcrypt from 'bcrypt';
+import authMiddleware from '../middleware/authMiddleware';
+import { ca } from 'zod/v4/locales';
 
 const router = express.Router();
 const SALT_ROUNDS = 10;
@@ -63,9 +65,35 @@ router.post("/signin", async (req: Request, res: Response, next: NextFunction): 
       { expiresIn: "1d" }
     );
 
-    res.json({ jwt: token });
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+    res.status(200).json({ message: "Signed in successfully" });
   } catch (e: any) {
     logger.error("Signin error: " + e.message);
+    next(e);
+  }
+});
+
+router.get("/me", authMiddleware, (req, res) => {
+  res.json({ user: req.user });
+});
+
+router.post("/logout", authMiddleware, (_, res, next) => {
+  try {
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+    });
+    res.status(200).json({ message: "Signed out successfully" });
+    logger.info("User signed out");
+  } catch (e: any) {
+    logger.error("Logout error: " + e.message);
     next(e);
   }
 });
