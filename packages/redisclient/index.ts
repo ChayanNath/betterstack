@@ -4,6 +4,16 @@ import { createClient, type RedisClientType } from "redis";
  * CENTRAL CONFIG
  */
 const STREAM_NAME = "betteruptime:website";
+
+const TICK_STREAM_NAME = "betteruptime:tick";
+
+export type TickEvent = {
+  status: "up" | "down";
+  response_time_ms: number;
+  website_id: string;
+  region_id: string;
+};
+
 let client: RedisClientType | null = null;
 let isConnected = false;
 
@@ -170,4 +180,69 @@ export async function xAckBulk(consumerGroup: string, eventIds: string[]) {
     pipeline.xAck(STREAM_NAME, consumerGroup, eventId);
   }
   await pipeline.exec();
+}
+
+
+/**
+ * Add a single uptime tick to the stream.
+ *  
+ * @param event 
+ */
+export async function xAddTick(event: TickEvent) {
+  await connectIfNeeded();
+  if (!client) throw new Error("Redis client not initialized");
+
+  const { status, response_time_ms, website_id, region_id } = event;
+   await client.xAdd(TICK_STREAM_NAME, "*", {
+    status,
+    response_time_ms: response_time_ms.toString(),
+    website_id,
+    region_id,
+  });
+}
+
+export async function xReadTicks(consumerGroup: string, workerId: string) {
+  await ensureGroup(consumerGroup);
+  if (!client) throw new Error("Redis client not initialized");
+
+  const stream = await client.xReadGroup(
+    consumerGroup,
+    workerId,
+    { key: TICK_STREAM_NAME, id: ">" },
+    { COUNT: 100, BLOCK: 1000 }
+  );
+
+  if (!isStreamEntryArray(stream)) {
+    return null;
+  }
+
+  const entry = stream[0];
+  if (!entry?.messages?.length) return null;
+  return entry.messages;
+}
+
+export async function xAckTick(consumerGroup: string, ids: string[]) {
+  if (!ids.length) return;
+  await connectIfNeeded();
+  if (!client) throw new Error("Redis client not initialized");
+  const pipeline = client.multi();
+  for (const id of ids) {
+    pipeline.xAck(TICK_STREAM_NAME, consumerGroup, id);
+  }
+  await pipeline.exec();
+}
+
+async function ensureTickGroup(consumerGroup: string) {
+  await connectIfNeeded();
+  if (!client) throw new Error("Redis client not initialized");
+
+  try {
+    await client.xGroupCreate(TICK_STREAM_NAME, consumerGroup, "0", { MKSTREAM: true });
+    console.log(`Created consumer group "${consumerGroup}" on stream "${TICK_STREAM_NAME}".`);
+  } catch (err: any) {
+    if (typeof err?.message === "string" && err.message.includes("BUSYGROUP")) {
+      return;
+    }
+    throw err;
+  }
 }
