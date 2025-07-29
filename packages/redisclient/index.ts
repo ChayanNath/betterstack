@@ -202,7 +202,7 @@ export async function xAddTick(event: TickEvent) {
 }
 
 export async function xReadTicks(consumerGroup: string, workerId: string) {
-  await ensureGroup(consumerGroup);
+  await ensureTickGroup(consumerGroup);
   if (!client) throw new Error("Redis client not initialized");
 
   const stream = await client.xReadGroup(
