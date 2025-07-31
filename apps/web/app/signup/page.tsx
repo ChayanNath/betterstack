@@ -6,6 +6,7 @@ import { Shield, Eye, EyeOff, Check, X } from 'lucide-react';
 import axios from 'axios';
 import { BACKEND_URL } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 export default function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
@@ -29,9 +30,11 @@ export default function SignUp() {
     .then(res => {
       console.log(res.data);
       router.push('/signin');
+      toast.success('Signed up successfully');
     })
-    .catch(err => {
-      console.log(err);
+    .catch((err: any) => {
+      console.error(err);
+      toast.error(err?.details?.message || 'Failed to sign up');
     });
   };
 

@@ -38,9 +38,9 @@ export default function Hero() {
             </Button>
             
             <Button 
-              variant="outline" 
+              variant="secondary" 
               size="lg" 
-              className="border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white px-8 py-4 text-lg"
+              className="px-8 py-4 text-lg"
             >
               <Play className="mr-2 h-5 w-5" />
               Watch Demo

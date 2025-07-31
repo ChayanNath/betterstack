@@ -55,6 +55,28 @@ router.get("/website/:id", authMiddleware, async (req: Request, res: Response, n
   }
 });
 
+router.delete("/website/:id", authMiddleware, async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const website = await prismaClient.website.delete({
+      where: {
+        id: req.params.id,
+        userId: req.user?.id,
+      },
+    });
+
+    if (!website) {
+      res.status(404).json({ message: "Website not found" });
+      logger.error("Website not found: " + req.params.id);
+      return;
+    }
+
+    res.json({ message: "Website deleted successfully" });
+  } catch (e: any) {
+    logger.error("Delete website error: " + e.message);
+    next(e);
+  }
+});
+
 router.get("/websites", authMiddleware, async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const userId = req.user?.id;

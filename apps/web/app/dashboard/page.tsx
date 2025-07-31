@@ -20,6 +20,7 @@ import AddWebsiteModal from "@/components/AddWebsiteModal";
 import axios from "axios";
 import { BACKEND_URL } from "@/lib/utils";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner"
 
 interface WebsiteTick {
   status: "up" | "down";
@@ -67,11 +68,11 @@ export default function Dashboard() {
         `${BACKEND_URL}/websites?page=${page}&limit=10`,
         { withCredentials: true }
       );
-      console.log(res.data.data);
       setWebsites(res.data.data);
       setTotalPages(res.data.totalPages);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to fetch websites", error);
+      toast.error(error?.details?.message || "Failed to fetch websites");
     } finally {
       setLoading(false);
     }
@@ -106,12 +107,29 @@ export default function Dashboard() {
         withCredentials: true,
       })
       .then((res) => {
+        toast.success("Website added successfully");
         fetchWebsites();
       })
       .catch((err) => {
         console.error(err);
+        toast.error(err?.details?.message || "Failed to add website");
       });
   };
+
+  const handleDeleteWebsite = (websiteId: string) => {
+     axios
+      .delete(`${BACKEND_URL}/website/${websiteId}`, {
+        withCredentials: true,
+      })
+      .then((res) => {
+        toast.success("Website removed successfully");
+        fetchWebsites();
+      })
+      .catch((err) => {
+        console.error(err);
+        toast.error(err?.details?.message || "Failed to remove website");
+      });
+  }
 
   const getStatus = (w: Website) =>
     w?.ticks?.length === 0 ? "checking" : w?.ticks?.[0]?.status || "down";
@@ -253,18 +271,17 @@ export default function Dashboard() {
                     <td className="px-6 py-4 flex gap-2">
                       <Button
                         variant="ghost"
+                        className="text-white"
                         size="sm"
                         onClick={() => router.push(`/website/${w.id}`)}
                       >
                         <ExternalLink className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm">
-                        <Edit className="h-4 w-4" />
-                      </Button>
                       <Button
                         variant="ghost"
                         size="sm"
                         className="text-red-400"
+                        onClick={() => handleDeleteWebsite(w.id)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

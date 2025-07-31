@@ -7,6 +7,7 @@ import axios from "axios";
 import { BACKEND_URL } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { toast } from "sonner";
 
 export default function SignIn() {
   const [showPassword, setShowPassword] = useState(false);
@@ -31,11 +32,14 @@ export default function SignIn() {
           withCredentials: true,
         }
       );
+
+      toast.success("Logged in successfully");
       router.push("/dashboard");
     } catch (err: any) {
       console.error(err);
       const message = err.response?.data?.message || "Login failed";
       setError(message);
+      toast.error(message);
     }
   };
 
