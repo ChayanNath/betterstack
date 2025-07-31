@@ -64,10 +64,12 @@ export default function Header() {
               Support
             </a>
             <div className="flex flex-col space-y-2 pt-4">
-              <Button variant="ghost" className="justify-start text-gray-300 hover:text-white hover:bg-gray-800">
+              <Button 
+                onClick={() => router.push('/signin')} variant="ghost" className="justify-start text-gray-300 hover:text-white hover:bg-gray-800">
                 Sign In
               </Button>
-              <Button className="bg-blue-500 hover:bg-blue-600 text-white justify-start">
+              <Button onClick={() => router.push('/signup')} 
+                className="bg-blue-500 hover:bg-blue-600 text-white justify-start">
                 Start Free Trial
               </Button>
             </div>

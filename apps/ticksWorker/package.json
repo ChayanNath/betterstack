@@ -1,0 +1,21 @@
+{
+  "name": "ticksworker",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "scripts": {
+    "dev": "bun run index.ts"
+  },
+  "peerDependencies": {
+    "typescript": "^5",
+    "store": "workspace:*",
+    "redisclient": "workspace:*",
+    "logger": "workspace:*"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.1"
+  }
+}

@@ -1,8 +1,8 @@
-import { xReadGroup, xAckBulk } from "redisclient/client";
+import { xReadGroup, xAckBulk, xAddTick } from "redisclient/client";
 import axios from "axios";
 import { prismaClient } from "store/client";
 import dotenv from "dotenv";
-import logger from 'logger/client';
+import logger from "logger/client";
 
 dotenv.config();
 
@@ -50,26 +50,22 @@ async function processWebsite(
     await axios.get(url);
     const endTime = Date.now();
 
-    await prismaClient.websiteTick.create({
-      data: {
-        response_time_ms: endTime - startTime,
-        status: "up",
-        region_id: regionId,
-        website_id: websiteId,
-      },
+    await xAddTick({
+      response_time_ms: endTime - startTime,
+      status: "up",
+      region_id: regionId,
+      website_id: websiteId,
     });
 
     return redisMessageId;
   } catch (err) {
     const endTime = Date.now();
 
-    await prismaClient.websiteTick.create({
-      data: {
-        response_time_ms: endTime - startTime,
-        status: "down",
-        region_id: regionId,
-        website_id: websiteId,
-      },
+    await xAddTick({
+      response_time_ms: endTime - startTime,
+      status: "down",
+      region_id: regionId,
+      website_id: websiteId,
     });
 
     return redisMessageId;
@@ -82,7 +78,7 @@ async function main() {
 
   const regionId = await getRegionId(REGION_NAME);
 
-  logger.info(`Worker started for region "${REGION_NAME}" with ID: ${regionId}`);
+  logger.info(`Ping Worker started for region "${REGION_NAME}" with ID: ${WORKER_ID}`);
 
   while (true) {
     try {
@@ -121,12 +117,12 @@ async function main() {
         logger.info(`Acked ${ackIds.length} messages`);
       }
     } catch (err) {
-      logger.error("Error in worker loop:", err);
+      logger.error("Error in ping worker loop:", err);
       await sleep(1000);
     }
   }
 }
 
 main().catch((err) => {
-  console.error("Worker failed to start:", err);
+  console.error("Ping Worker failed to start:", err);
 });

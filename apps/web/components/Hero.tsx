@@ -2,8 +2,12 @@
 
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Play, CheckCircle } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function Hero() {
+
+  const router = useRouter();
+  
   return (
     <section className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-blue-900 pt-20 pb-16 overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -27,6 +31,7 @@ export default function Hero() {
             <Button 
               size="lg" 
               className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-4 text-lg"
+              onClick={() => router.push('/signup')}
             >
               Start Free Trial
               <ArrowRight className="ml-2 h-5 w-5" />
