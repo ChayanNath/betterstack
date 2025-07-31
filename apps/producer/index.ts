@@ -11,7 +11,7 @@ async function main() {
       },
     });
     await xAddBulk(websites);
-    logger.info("Websites added to Redis stream", websites);
+    logger.info("Websites added to Redis stream", websites.length);
   } catch (err) {
     logger.error("Error adding websites to Redis stream", err);
   }

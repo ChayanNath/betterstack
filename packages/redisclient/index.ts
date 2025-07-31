@@ -201,25 +201,43 @@ export async function xAddTick(event: TickEvent) {
   });
 }
 
-export async function xReadTicks(consumerGroup: string, workerId: string) {
+export async function xReadTicks(
+  consumerGroup: string,
+  workerId: string,
+  maxBatch = 200
+): Promise<StreamMessage[] | null> {
   await ensureTickGroup(consumerGroup);
   if (!client) throw new Error("Redis client not initialized");
 
-  const stream = await client.xReadGroup(
-    consumerGroup,
-    workerId,
-    { key: TICK_STREAM_NAME, id: ">" },
-    { COUNT: 100, BLOCK: 1000 }
-  );
+  const messages: StreamMessage[] = [];
 
-  if (!isStreamEntryArray(stream)) {
-    return null;
+  async function read(id: "0" | ">", block = 0) {
+    const result = await client!.xReadGroup(
+      consumerGroup,
+      workerId,
+      { key: TICK_STREAM_NAME, id },
+      {
+        COUNT: Math.min(maxBatch - messages.length, 100),
+        ...(id === ">" ? { BLOCK: block } : {}),
+      }
+    );
+
+    if (isStreamEntryArray(result) && result[0]) {
+      messages.push(...result[0].messages);
+    }
   }
 
-  const entry = stream[0];
-  if (!entry?.messages?.length) return null;
-  return entry.messages;
+  await read("0");
+
+  while (messages.length < maxBatch) {
+    const before = messages.length;
+    await read(">", 500);
+    if (messages.length === before) break;
+  }
+
+  return messages.length > 0 ? messages : null;
 }
+
 
 export async function xAckTick(consumerGroup: string, ids: string[]) {
   if (!ids.length) return;
